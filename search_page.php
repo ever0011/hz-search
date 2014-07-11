@@ -49,7 +49,7 @@
     $contextsByUrl[$context["_source"]["url"]] = $context["_source"];
   }
   $contextsByUrl['ROOT'] = array(
-    "name" => "Top context"
+    "name" => "DeltaExpertise"
   );
 
   // Get search results
@@ -279,7 +279,7 @@
   <input type="hidden" id="search-query" value="<?php echo htmlentities($_GET['q']) ?>">
 
   <div id="mw-content-text" lang="nl" dir="ltr" class="mw-content-ltr">
-    <p class="count-string"><?php echo count($contextResults[md5('ROOT')]) ?> zoekresultaten</p>
+    <!--<p class="count-string"><?php echo count($contextResults[md5('ROOT')]) ?> zoekresultaten</p>-->
 
     <div id="page">
 
