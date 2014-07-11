@@ -1,42 +1,19 @@
 $(function () {
 
+  // Initialize AutoComplete
+  var ac = new AutoComplete($('#searchform'), $('#searchInput'), $('.suggestions'));
+  ac.init();
+
   // Here comes the code for the actual search page
-
-  var selectedContext = null;
-
-  $('[data-context]').click(function (e) {
-    e.preventDefault();
-    selectedContext = $(this).attr('data-context');
-    if (selectedContext == 'null') selectedContext = null;
-
-    $('[data-context]').removeClass('active');
-    $(this).addClass('active');
-
-    if (selectedContext != null) {
-      $('[data-contexts]').hide();
-      $('[data-contexts*='+selectedContext+']').fadeIn();
+  $('.search-context-title').click(function (e) {
+    var $block = $(this).closest('.search-context-block');
+    if ($block.hasClass('open')) {
+      $block.addClass('closed');
+      $block.removeClass('open');
     } else {
-      $('[data-contexts]').fadeIn();
+      $block.addClass('open');
+      $block.removeClass('closed');
     }
-
-
-    if (selectedContext != null)
-      $('.search-everywhere').fadeIn();
-    else
-      $('.search-everywhere').fadeOut();
-
-    var count = $(this).attr('data-count');
-
-    if (count == 1)
-      var zoekresultaten = 'zoekresultaat';
-    else
-      var zoekresultaten = 'zoekresultaten';
-
-    if (selectedContext != null)
-      $('.count-string').text(count+' '+zoekresultaten+' in de context '+$(this).attr('data-context-name'));
-    else
-      $('.count-string').text(count+' '+zoekresultaten+'');
-
   });
 
 });

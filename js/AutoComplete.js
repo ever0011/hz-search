@@ -10,36 +10,39 @@
 // Constructor function
 var AutoComplete = function (form, input, suggestions) {
 
-  var _this = this;
+  this.init = function () {
 
-  // Save dom references
-  this.form = form;
-  this.input = input;
-  this.suggestions = suggestions;
+    var _this = this;
 
-  // Attach event listeners
-  this.input.focus(this.openUp.bind(_this));
-  this.input.blur(this.closeDown.bind(_this));
-  this.suggestions.hover(function () {}, this.selectNormalSearch.bind(_this));
-  this.input.keydown(this.keydownListener.bind(_this));
-  this.form.submit(this.submitSearch.bind(_this));
+    // Save dom references
+    this.form = form;
+    this.input = input;
+    this.suggestions = suggestions;
 
-  // On keyup in the search input, we give suggestions
-  // in the case of NOT arrow up, arrow down or submit
-  this.input[0].addEventListener('keyup', function (e) {
-    if (e.which !== _this.ARROW_UP_KEY &&
-        e.which !== _this.ARROW_DOWN_KEY &&
-        e.which !== _this.ENTER_KEY
-    ) {
-      e.preventDefault();
-      _this.giveSearchSuggestions(_this);
-    }
-  });
+    // Attach event listeners
+    this.input.focus(this.openUp.bind(_this));
+    this.input.blur(this.closeDown.bind(_this));
+    this.suggestions.hover(function () {}, this.selectNormalSearch.bind(_this));
+    this.input.keydown(this.keydownListener.bind(_this));
+    this.form.submit(this.submitSearch.bind(_this));
 
-  // By default, the current suggestion is -1: normal search
-  // if the values is >=0, the number is the index of the selected
-  // suggestion
-  this.currentSuggestion = -1;
+    // On keyup in the search input, we give suggestions
+    // in the case of NOT arrow up, arrow down or submit
+    this.input[0].addEventListener('keyup', function (e) {
+      if (e.which !== _this.ARROW_UP_KEY &&
+          e.which !== _this.ARROW_DOWN_KEY &&
+          e.which !== _this.ENTER_KEY
+      ) {
+        e.preventDefault();
+        _this.giveSearchSuggestions(_this);
+      }
+    });
+
+    // By default, the current suggestion is -1: normal search
+    // if the values is >=0, the number is the index of the selected
+    // suggestion
+    this.currentSuggestion = -1;
+  };
 
 };
 AutoComplete.prototype = {
@@ -173,7 +176,7 @@ AutoComplete.prototype = {
       // enter
       e.preventDefault();
       if (this.currentSuggestion === -1) {
-        this.submitSearch();
+        this.submitSearch(e);
       } else {
         this.openSuggestion($(this.suggestions.find('li')[this.currentSuggestion]).attr('data-url'));
       }
@@ -181,9 +184,3 @@ AutoComplete.prototype = {
   }
 };
 
-$(function() {
-
-  // Initialize AutoComplete
-  var ac = new AutoComplete($('#searchform'), $('#searchInput'), $('.suggestions'));
-
-});

@@ -36,6 +36,7 @@
     'type' => 'context',
     'size' => 1000,
     'body' => array(
+      'sort' => array("name.untouched"),
       'query' => array(
         'match_all' => array()
       )
@@ -43,7 +44,13 @@
   ));
   $contexts = $contexts['hits']['hits'];
 
-
+  $contextsByUrl = array();
+  foreach ($contexts as $context) {
+    $contextsByUrl[$context["_source"]["url"]] = $context["_source"];
+  }
+  $contextsByUrl['ROOT'] = array(
+    "name" => "Top context"
+  );
 
   // Get search results
 
@@ -216,12 +223,14 @@
   // Count the number of results per context
   // in a dictionary like $counts[md5 of url] = int.
   $counts = array();
+  $contextResults = array();
   foreach ($search_results as $result) {
     $url = urldecode($result['_source']['url']);
     foreach ($result['_source']['context'] as $cntxt) {
       $tr = $trace(urldecode($cntxt));
       foreach ($tr as $t) {
         $counts[$t]++;
+        $contextResults[$t][md5($result['_source']['url'])] = $result;
       }
     }
   }
@@ -232,6 +241,34 @@
     else return 0;
   };
 
+  $recursiveResultContents = function ($context, $nesting = 0) use (&$recursiveResultContents, $contextsByUrl, $children, $contextResults)
+  {
+    if ($nesting > 5) {
+      return "";
+    }
+    $current = $contextsByUrl[$context];
+
+    $results = $contextResults[md5($context)];
+
+    ob_start();
+
+    printf("<div class=\"search-context-block closed\" data-count=\"%s\">", count($results));
+
+    printf("  <div class=\"search-context-title\"><span class=\"open-closed-indicator\">s</span> %s</div>\n", $current['name']);
+
+    foreach ($children[$context] as $child) {
+      echo $recursiveResultContents($child, $nesting + 1);
+    }
+
+    printf("  <ul class=\"search-context-results minify\">\n");
+    foreach ($results as $r) {
+      printf("    <li class=\"search-result\"><a href=\"%s\">%s</a></li>",vn_url($r['_source']['suggest']['payload']), htmlentities($r['_source']['title']));
+    }
+    printf("  </ul>\n");
+    printf("</div>");
+
+    return ob_get_clean();
+  };
 
 ?>
 <div id="sectionNav"></div>
@@ -242,57 +279,13 @@
   <input type="hidden" id="search-query" value="<?php echo htmlentities($_GET['q']) ?>">
 
   <div id="mw-content-text" lang="nl" dir="ltr" class="mw-content-ltr">
-    <p class="count-string"><?php echo count($search_results) ?> zoekresultaten</p>
+    <p class="count-string"><?php echo count($contextResults[md5('ROOT')]) ?> zoekresultaten</p>
 
     <div id="page">
-      <ul class="search-results">
-        <?php foreach($search_results as $result): ?>
-        <a data-contexts="<?php echo implode(" ",$trace($result['_source']['context'][0])) ?>" href="<?php echo htmlentities(vn_url($result['_source'])) ?>"><li>
-          <h2><?php echo htmlentities($result['_source']['title']) ?></h2>
-          <p>Context: <?php echo htmlentities($result['_source']['context_readable']) ?>
-          <?php
-            if (!$contextExists($result['_source']['context'][0])) {
-              echo "<span class=\"error\"> !</span>\n";
-            }
-          ?>
-          </p>
-        </li></a>
-        <?php endforeach ?>
-      </ul>
+
+      <?php echo $recursiveResultContents('ROOT'); ?>
+
     </div>
-    <?php if (count($search_results) > 1): ?>
-      <div class="aside search-context-info" id="taxonomy">
-        <div>
-          <p>Zoek specifieker in:</p>
-          <h2>
-            <a 
-              data-count="<?php echo $urlCounts($search_context) ?>" 
-              data-context="<?php echo md5($search_context) ?>" 
-              data-context-name="<?php echo htmlentities($search_context_info['name']) ?>"
-              href="<?php echo vn_url($search_context_info) ?>"
-            >
-              <?php echo $search_context_info['name'] ?>  (<?php echo $urlCounts($search_context) ?>)
-            </a>
-          </h2>
-          <ul class="list-unstyled">
-            <?php foreach($children[$search_context] as $child): ?>
-              <?php if ($urlCounts($child) > 0): ?>
-              <li>
-                <a 
-                  data-count="<?php echo $urlCounts($child) ?>" 
-                  data-context="<?php echo md5($child) ?>" 
-                  data-context-name="<?php echo htmlentities($info[$child]['name']) ?>"
-                  href="<?php echo vn_url($info[$child]) ?>"
-                >
-                  <?php echo $info[$child]['name'] ?> (<?php echo $urlCounts($child) ?>)
-                </a>
-              </li>
-              <?php endif ?>
-            <?php endforeach ?>
-          </ul>
-          <p><a href="#" data-count="<?php echo count($search_results) ?>" class="search-everywhere" data-context="null">Zoek overal (<?php echo count($search_results) ?>)</a></p>
-        </div>
-      </div>
-    <?php endif ?>
+
   </div>
 </div>
